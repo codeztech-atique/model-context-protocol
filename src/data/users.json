@@ -1,0 +1,65 @@
+[
+  {
+    "id": 1,
+    "name": "Alice Johnson",
+    "email": "alice.johnson@example.com",
+    "address": "123 Maple Street, Springfield, IL",
+    "phone": "+1-555-123-4567"
+  },
+  {
+    "id": 2,
+    "name": "Bob Smith",
+    "email": "bob.smith@example.com",
+    "address": "456 Oak Avenue, Lincoln, NE",
+    "phone": "+1-555-234-5678"
+  },
+  {
+    "id": 3,
+    "name": "Carol Lee",
+    "email": "carol.lee@example.com",
+    "address": "789 Pine Road, Madison, WI",
+    "phone": "+1-555-345-6789"
+  },
+  {
+    "id": 4,
+    "name": "David Kim",
+    "email": "david.kim@example.com",
+    "address": "321 Birch Lane, Austin, TX",
+    "phone": "+1-555-456-7890"
+  },
+  {
+    "id": 5,
+    "name": "Eva Martinez",
+    "email": "eva.martinez@example.com",
+    "address": "654 Cedar Court, Seattle, WA",
+    "phone": "+1-555-567-8901"
+  },
+  {
+    "id": 6,
+    "name": "Atique Ahmed",
+    "email": "atique1201@gmail.com",
+    "address": "Akhandata, newtown action area 2D",
+    "phone": "8553208493"
+  },
+  {
+    "id": 7,
+    "name": "John Doe",
+    "email": "user@example.com",
+    "address": "123 Main St, Cityville",
+    "phone": "123-456-7890"
+  },
+  {
+    "id": 8,
+    "name": "hanufa hannan",
+    "email": "hanufa@clothovia.com",
+    "address": "456 Elm Street, Metropolis",
+    "phone": "555-987-6543"
+  },
+  {
+    "id": 9,
+    "name": "Random User",
+    "email": "randomuser2025@example.com",
+    "address": "1600 Market St, Philadelphia, PA",
+    "phone": "267-555-2025"
+  }
+]
