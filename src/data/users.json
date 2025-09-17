@@ -61,5 +61,19 @@
     "email": "randomuser2025@example.com",
     "address": "1600 Market St, Philadelphia, PA",
     "phone": "267-555-2025"
+  },
+  {
+    "id": 10,
+    "name": "Emily Carter",
+    "email": "emily.carter82@example.com",
+    "address": "742 Maple Avenue, Springfield, IL 62704",
+    "phone": "(217) 555-0198"
+  },
+  {
+    "id": 11,
+    "name": "Jessica Turner",
+    "email": "jessica.turner82@example.com",
+    "address": "742 Maplewood Drive, Springfield, IL 62704",
+    "phone": "(217) 555-0198"
   }
 ]

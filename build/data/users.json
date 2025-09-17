@@ -54,5 +54,12 @@
         "email": "hanufa@clothovia.com",
         "address": "456 Elm Street, Metropolis",
         "phone": "555-987-6543"
+    },
+    {
+        "id": 9,
+        "name": "Random User",
+        "email": "randomuser2025@example.com",
+        "address": "1600 Market St, Philadelphia, PA",
+        "phone": "267-555-2025"
     }
 ]

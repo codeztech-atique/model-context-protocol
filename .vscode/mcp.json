@@ -1,20 +1,18 @@
 {
-	"servers": {
-		"test-mcp-video-server": {
-			"type": "stdio",
-			"command": "node",
-			"args": [
-				"build/server.js"
-			],
-			"cwd": "${workspaceFolder}",
-			"dev": {
-				"watch": "build/**/*.js",
-				"debug": {
-					"type": "node"
-				}
-			}
-		}
-	
-	},
-	"inputs": []
+  "servers": {
+    "test-mcp-video-server": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["build/server.js"],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "NODE_ENV": "production"
+      },
+      "dev": {
+        "watch": "build/**/*.js",
+        "debug": { "type": "node" }
+      }
+    }
+  },
+  "inputs": []
 }
