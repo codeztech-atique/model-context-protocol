@@ -75,5 +75,24 @@
     "email": "jessica.turner82@example.com",
     "address": "742 Maplewood Drive, Springfield, IL 62704",
     "phone": "(217) 555-0198"
+  },
+  {
+    "id": 12,
+    "name": "Atique Ahmed",
+    "email": "atique@zoom.us",
+    "address": "Newtown action area 1, Kolkata",
+    "phone": "8553208493"
+  },
+  {
+    "id": 13,
+    "name": "Eleanor Vance",
+    "email": "eleanor.vance78@example.com",
+    "address": {
+      "street": "456 Oak Avenue",
+      "city": "Springfield",
+      "state": "IL",
+      "zip": "62704"
+    },
+    "phone": "217-555-9876"
   }
 ]

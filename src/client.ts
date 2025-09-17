@@ -22,7 +22,7 @@ const mcp = new Client(
 const transport = new StdioClientTransport({
   command: "node",
   args: ["build/server.js"],
-  stderr: "pipe",
+  stderr: "ignore",
 })
 
 const google = createGoogleGenerativeAI({
@@ -154,6 +154,7 @@ async function handleQuery(tools: Tool[]) {
   })
 
   console.log(
+    // @ts-expect-error
     text || toolResults[0]?.result?.content[0]?.text || "No text generated."
   )
 }
@@ -237,3 +238,4 @@ async function handleServerMessagePrompt(message: PromptMessage) {
 }
 
 main()
+

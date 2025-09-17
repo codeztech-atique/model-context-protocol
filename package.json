@@ -21,13 +21,15 @@
   },
   "homepage": "https://github.com/codeztech-atique/model-context-protocol#readme",
   "dependencies": {
-    "@ai-sdk/google": "^2.0.14",
+    "@ai-sdk/google": "^1.2.19",
+    "@anthropic-ai/sdk": "^0.62.0",
     "@inquirer/prompts": "^7.8.6",
     "@modelcontextprotocol/sdk": "^1.18.0",
     "@types/node": "^24.5.0",
-    "ai": "^5.0.44",
+    "ai": "^4.3.16",
+    "dotenv": "^17.2.2",
     "tsx": "^4.20.5",
-    "typescript": "^5.9.2",
+    "typescript": "^5.8.3",
     "zod": "^3.25.76"
   },
   "devDependencies": {

@@ -1,203 +1,136 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-require("dotenv/config");
-const google_1 = require("@ai-sdk/google");
-const prompts_1 = require("@inquirer/prompts");
-const index_js_1 = require("@modelcontextprotocol/sdk/client/index.js");
-const stdio_js_1 = require("@modelcontextprotocol/sdk/client/stdio.js");
+const mcp_js_1 = require("@modelcontextprotocol/sdk/server/mcp.js");
+const stdio_js_1 = require("@modelcontextprotocol/sdk/server/stdio.js");
+const zod_1 = require("zod");
+const promises_1 = __importDefault(require("node:fs/promises"));
 const types_js_1 = require("@modelcontextprotocol/sdk/types.js");
-const ai_1 = require("ai");
-const mcp = new index_js_1.Client({
-    name: "text-client-video",
+const server = new mcp_js_1.McpServer({
+    name: "test-video",
     version: "1.0.0",
-}, { capabilities: { sampling: {} } });
-const transport = new stdio_js_1.StdioClientTransport({
-    command: "node",
-    args: ["build/server.js"],
-    stderr: "ignore",
+    capabilities: { resources: {}, tools: {}, prompts: {} },
 });
-const google = (0, google_1.createGoogleGenerativeAI)({
-    apiKey: process.env.GEMINI_API_KEY,
+server.resource("users", "users://all", {
+    description: "Get all users data from the database",
+    title: "Users",
+    mimeType: "application/json",
+}, async (uri) => {
+    const users = await import("./data/users.json", { with: { type: "json" } }).then((m) => m.default);
+    return {
+        contents: [
+            {
+                uri: uri.href,
+                text: JSON.stringify(users),
+                mimeType: "application/json",
+            },
+        ],
+    };
 });
-async function main() {
-    await mcp.connect(transport);
-    const [{ tools }, { prompts }, { resources }, { resourceTemplates }] = await Promise.all([
-        mcp.listTools(),
-        mcp.listPrompts(),
-        mcp.listResources(),
-        mcp.listResourceTemplates(),
-    ]);
-    mcp.setRequestHandler(types_js_1.CreateMessageRequestSchema, async (request) => {
-        const texts = [];
-        for (const message of request.params.messages) {
-            const text = await handleServerMessagePrompt(message);
-            if (text != null)
-                texts.push(text);
-        }
+server.resource("user-details", new mcp_js_1.ResourceTemplate("users://{userId}/profile", { list: undefined }), {
+    description: "Get a user's details from teh database",
+    title: "User Details",
+    mimeType: "application/json",
+}, async (uri, { userId }) => {
+    const users = await import("./data/users.json", { with: { type: "json" } }).then((m) => m.default);
+    const user = users.find((u) => u.id === parseInt(userId));
+    if (user == null) {
         return {
+            contents: [
+                {
+                    uri: uri.href,
+                    text: JSON.stringify({ error: "User not found" }),
+                    mimeType: "application/json",
+                },
+            ],
+        };
+    }
+    return {
+        contents: [
+            {
+                uri: uri.href,
+                text: JSON.stringify(user),
+                mimeType: "application/json",
+            },
+        ],
+    };
+});
+server.tool("create-user", "Create a new user in the database", {
+    name: zod_1.z.string(),
+    email: zod_1.z.string(),
+    address: zod_1.z.string(),
+    phone: zod_1.z.string(),
+}, {
+    title: "Create User",
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: false,
+    openWorldHint: true,
+}, async (params) => {
+    try {
+        const id = await createUser(params);
+        return { content: [{ type: "text", text: `User ${id} created successfully` }] };
+    }
+    catch {
+        return { content: [{ type: "text", text: "Failed to save user" }] };
+    }
+});
+server.tool("create-random-user", "Create a random user with fake data", {
+    title: "Create Random User",
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: false,
+    openWorldHint: true,
+}, async () => {
+    const res = await server.server.request({
+        method: "sampling/createMessage",
+        params: {
+            messages: [
+                {
+                    role: "user",
+                    content: {
+                        type: "text",
+                        text: "Generate fake user data. The user should have a realistic name, email, address, and phone number. Return this data as a JSON object with no other text or formatter so it can be used with JSON.parse.",
+                    },
+                },
+            ],
+            maxTokens: 1024,
+        },
+    }, types_js_1.CreateMessageResultSchema);
+    if (res.content.type !== "text") {
+        return { content: [{ type: "text", text: "Failed to generate user data" }] };
+    }
+    try {
+        const fakeUser = JSON.parse(res.content.text.trim().replace(/^```json/, "").replace(/```$/, "").trim());
+        const id = await createUser(fakeUser);
+        return { content: [{ type: "text", text: `User ${id} created successfully` }] };
+    }
+    catch {
+        return { content: [{ type: "text", text: "Failed to generate user data" }] };
+    }
+});
+server.prompt("generate-fake-user", "Generate a fake user based on a given name", { name: zod_1.z.string() }, ({ name }) => ({
+    messages: [
+        {
             role: "user",
-            model: "gemini-2.0-flash",
-            stopReason: "endTurn",
             content: {
                 type: "text",
-                text: texts.join("\n"),
+                text: `Generate a fake user with the name ${name}. The user should have a realistic email, address, and phone number.`,
             },
-        };
-    });
-    console.log("You are connected!");
-    while (true) {
-        const option = await (0, prompts_1.select)({
-            message: "What would you like to do",
-            choices: ["Query", "Tools", "Resources", "Prompts"],
-        });
-        switch (option) {
-            case "Tools":
-                const toolName = await (0, prompts_1.select)({
-                    message: "Select a tool",
-                    choices: tools.map(tool => ({
-                        name: tool.annotations?.title || tool.name,
-                        value: tool.name,
-                        description: tool.description,
-                    })),
-                });
-                const tool = tools.find(t => t.name === toolName);
-                if (tool == null) {
-                    console.error("Tool not found.");
-                }
-                else {
-                    await handleTool(tool);
-                }
-                break;
-            case "Resources":
-                const resourceUri = await (0, prompts_1.select)({
-                    message: "Select a resource",
-                    choices: [
-                        ...resources.map(resource => ({
-                            name: resource.name,
-                            value: resource.uri,
-                            description: resource.description,
-                        })),
-                        ...resourceTemplates.map(template => ({
-                            name: template.name,
-                            value: template.uriTemplate,
-                            description: template.description,
-                        })),
-                    ],
-                });
-                const uri = resources.find(r => r.uri === resourceUri)?.uri ??
-                    resourceTemplates.find(r => r.uriTemplate === resourceUri)
-                        ?.uriTemplate;
-                if (uri == null) {
-                    console.error("Resource not found.");
-                }
-                else {
-                    await handleResource(uri);
-                }
-                break;
-            case "Prompts":
-                const promptName = await (0, prompts_1.select)({
-                    message: "Select a prompt",
-                    choices: prompts.map(prompt => ({
-                        name: prompt.name,
-                        value: prompt.name,
-                        description: prompt.description,
-                    })),
-                });
-                const prompt = prompts.find(p => p.name === promptName);
-                if (prompt == null) {
-                    console.error("Prompt not found.");
-                }
-                else {
-                    await handlePrompt(prompt);
-                }
-                break;
-            case "Query":
-                await handleQuery(tools);
-        }
-    }
+        },
+    ],
+}));
+async function createUser(user) {
+    const users = await import("./data/users.json", { with: { type: "json" } }).then((m) => m.default);
+    const id = users.length + 1;
+    users.push({ id, ...user });
+    await promises_1.default.writeFile("./src/data/users.json", JSON.stringify(users, null, 2));
+    return id;
 }
-async function handleQuery(tools) {
-    const query = await (0, prompts_1.input)({ message: "Enter your query" });
-    const { text, toolResults } = await (0, ai_1.generateText)({
-        model: google("gemini-2.0-flash"),
-        prompt: query,
-        tools: tools.reduce((obj, tool) => ({
-            ...obj,
-            [tool.name]: {
-                description: tool.description,
-                parameters: (0, ai_1.jsonSchema)(tool.inputSchema),
-                execute: async (args) => {
-                    return await mcp.callTool({
-                        name: tool.name,
-                        arguments: args,
-                    });
-                },
-            },
-        }), {}),
-    });
-    console.log(
-    // @ts-expect-error
-    text || toolResults[0]?.result?.content[0]?.text || "No text generated.");
-}
-async function handleTool(tool) {
-    const args = {};
-    for (const [key, value] of Object.entries(tool.inputSchema.properties ?? {})) {
-        args[key] = await (0, prompts_1.input)({
-            message: `Enter value for ${key} (${value.type}):`,
-        });
-    }
-    const res = await mcp.callTool({
-        name: tool.name,
-        arguments: args,
-    });
-    console.log(res.content[0].text);
-}
-async function handleResource(uri) {
-    let finalUri = uri;
-    const paramMatches = uri.match(/{([^}]+)}/g);
-    if (paramMatches != null) {
-        for (const paramMatch of paramMatches) {
-            const paramName = paramMatch.replace("{", "").replace("}", "");
-            const paramValue = await (0, prompts_1.input)({
-                message: `Enter value for ${paramName}:`,
-            });
-            finalUri = finalUri.replace(paramMatch, paramValue);
-        }
-    }
-    const res = await mcp.readResource({
-        uri: finalUri,
-    });
-    console.log(JSON.stringify(JSON.parse(res.contents[0].text), null, 2));
-}
-async function handlePrompt(prompt) {
-    const args = {};
-    for (const arg of prompt.arguments ?? []) {
-        args[arg.name] = await (0, prompts_1.input)({
-            message: `Enter value for ${arg.name}:`,
-        });
-    }
-    const response = await mcp.getPrompt({
-        name: prompt.name,
-        arguments: args,
-    });
-    for (const message of response.messages) {
-        console.log(await handleServerMessagePrompt(message));
-    }
-}
-async function handleServerMessagePrompt(message) {
-    if (message.content.type !== "text")
-        return;
-    console.log(message.content.text);
-    const run = await (0, prompts_1.confirm)({
-        message: "Would you like to run the above prompt",
-        default: true,
-    });
-    if (!run)
-        return;
-    const { text } = await (0, ai_1.generateText)({
-        model: google("gemini-2.0-flash"),
-        prompt: message.content.text,
-    });
-    return text;
+async function main() {
+    const transport = new stdio_js_1.StdioServerTransport();
+    await server.connect(transport);
 }
 main();
